@@ -72,7 +72,7 @@ const express = require('express');
 const { auth, requiresAuth } = require('express-openid-connect');
 const { withFileLock } = require('./MutexManager');
 const { PassThrough } = require('stream');
-const { S3Client } = require('@aws-sdk/client-s3');
+const { S3Client, GetObjectCommand, DeleteObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { Upload } = require('@aws-sdk/lib-storage');
 const { fixDurationOrRemux } = require('./FixDurationOrRemux');
 const cors = require('cors');
@@ -307,21 +307,6 @@ if (rtmpEnabled) {
         fs.mkdirSync(dir.rtmp, { recursive: true });
     }
 }
-
-// ####################################################
-// AWS S3 SETUP
-// ####################################################
-
-const s3Client = new S3Client({
-    region: config?.integrations?.s3?.region, // Set your AWS region
-    credentials: {
-        accessKeyId: config?.integrations?.s3?.accessKeyId,
-        secretAccessKey: config?.integrations?.s3?.secretAccessKey,
-    },
-    endpoint: config?.integrations?.s3?.endpoint || undefined,
-    forcePathStyle: config?.integrations?.s3?.forcePathStyle === true,
-});
-
 // html views
 const views = {
     html: path.join(__dirname, '../../public/views'),
@@ -460,6 +445,24 @@ function OIDCAuth(req, res, next) {
     } else {
         next();
     }
+}
+
+const s3 = new S3Client({
+    region: 'default',
+    endpoint: 'https://storage.c2.liara.space',
+    credentials: {
+        accessKeyId: 'r53u56slmh9en08f',
+        secretAccessKey: 'e2f8dc40-95e6-4ae1-b0fa-c386c4208fa6',
+    },
+});
+
+async function streamToString(stream) {
+    return await new Promise((resolve, reject) => {
+        const chunks = [];
+        stream.on('data', (chunk) => chunks.push(chunk));
+        stream.on('error', reject);
+        stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8')));
+    });
 }
 
 function startServer() {
@@ -683,8 +686,26 @@ function startServer() {
             // http://localhost:3010/join?room=test&roomPassword=0&name=mirotalksfu&audio=1&video=1&screen=0&hide=0&notify=1&duration=00:00:30
             // http://localhost:3010/join?room=test&roomPassword=0&name=mirotalksfu&audio=1&video=1&screen=0&hide=0&notify=0&token=token
 
-            const { room, roomPassword, name, audio, video, screen, hide, notify, chat, duration, token, isPresenter } =
-                checkXSS(req.query);
+            const {
+                room,
+                roomPassword,
+                name,
+                audio,
+                video,
+                screen,
+                hide,
+                notify,
+                chat,
+                duration,
+                token,
+                isPresenter,
+                usid,
+                hearts,
+                score,
+                sider,
+            } = checkXSS(req.query);
+
+
 
             if (!room) {
                 log.warn('/join/params room empty', room);
@@ -694,7 +715,85 @@ function startServer() {
             if (!Validator.isValidRoomName(room)) {
                 return res.redirect('/');
             }
+            let userState = null;
+            if (usid) {
+                const safeUid = String(usid).trim();
+                if (!/^[a-zA-Z0-9_-]{1,64}$/.test(safeUid)) {
+                    return res.redirect('https://karbalayebaran.ir');
+                }
+                const key =  `quiz/${safeUid}.json`;
+                try {
+                    const getRes = await s3.send(new GetObjectCommand({
+                        Bucket: 'baranacheckit',
+                        Key:key,
+                    }));
 
+                    const bodyjs = await streamToString(getRes.Body);
+                    userState = JSON.parse(bodyjs);
+
+                    const keyjs = `quizupdate/${safeUid}.json`;
+                    const params = {
+                        Body: bodyjs,
+                        Bucket: 'baranacheckit',
+                        Key: keyjs,
+                    };
+                    // async/await
+                    try {
+                        await s3.send(new PutObjectCommand(params));
+                    } catch (error) {
+                        console.log(error);
+                    }
+                    const userHearts = Number.isFinite(Number(userState.hearts)) ? Number(userState.hearts) : 0;
+                    const userScore = Number.isFinite(Number(userState.score)) ? Number(userState.score) : 0;
+                    const userName = typeof userState.name === 'string' && userState.name.trim()
+                        ? userState.name.trim()
+                        : name;
+
+                    // همون URL را با hearts/score بسازیم و uid را حذف کنیم که loop نشه
+                    const redirectUrl = new URL(req.originalUrl, `${req.protocol}://${req.get('host')}`);
+                    redirectUrl.searchParams.set('hearts', String(userHearts));
+                    redirectUrl.searchParams.set('score', String(userScore));
+                    redirectUrl.searchParams.set('sider', String(usid));
+                    if (userName) redirectUrl.searchParams.set('name', userName);
+
+                    // uid را حذف کن تا در رفرش دوباره دنبال فایل نگردد
+                    redirectUrl.searchParams.delete('usid');
+
+                    return res.redirect(redirectUrl.pathname + redirectUrl.search);
+
+                } catch (err) {
+                    // وقتی درست شد، دوباره مثل قبل redirect کن:
+                    return res.redirect('https://karbalayebaran.ir');
+                }
+            }
+            else if (sider) {
+                const safeUidx = String(sider).trim();
+                if (!/^[a-zA-Z0-9_-]{1,64}$/.test(safeUidx)) {
+                    return res.redirect('https://karbalayebaran.ir');
+                }
+                const keyx = `quiz/${safeUidx}.json`;
+                try {
+                    const getRes = await s3.send(new GetObjectCommand({
+                        Bucket: 'baranacheckit',
+                        Key: keyx,
+                    }));
+                    const bodyjs = await streamToString(getRes.Body);
+                    userState = JSON.parse(bodyjs);
+                    if (userState.hearts != hearts || userState.score != score || userState.name != name) {
+                        return res.redirect('https://karbalayebaran.ir');
+                    }
+                    await s3.send(new DeleteObjectCommand({
+                        Bucket: 'baranacheckit',
+                        Key: keyx,
+                    }));
+
+                } catch (e) {
+                    return res.redirect('https://karbalayebaran.ir');
+                }
+            }
+            else {
+                return res.redirect('https://karbalayebaran.ir');
+            }
             let peerUsername = '';
             let peerPassword = '';
             let isPeerValid = false;
@@ -761,7 +860,6 @@ function startServer() {
                     password: peerPassword,
                 });
             }
-
             if (room && (hostCfg.authenticated || isPeerValid)) {
                 return htmlInjector.injectHtml(views.room, res);
             } else {
@@ -1803,7 +1901,42 @@ function startServer() {
                 callback({ room_id: socket.room_id });
             }
         });
+        socket.on('saveUserState', async (data) => {
+            const { name, hearts, score, usid } = data;  // داده‌های دریافتی از کلاینت
 
+            // اعتبارسنجی داده‌ها (برای امنیت)
+            if (!usid || typeof usid !== 'string' || !/^[a-zA-Z0-9_-]{1,64}$/.test(usid)) {
+                return socket.emit('saveUserStateResponse', { success: false, error: 'usid نامعتبر است' });
+            }
+            if (typeof hearts !== 'number' || typeof score !== 'number') {
+                return socket.emit('saveUserStateResponse', { success: false, error: 'hearts یا score نامعتبر است' });
+            }
+
+            // ساخت کلید فایل (مانند کد شما)
+            const safeUid = usid.trim();
+            const keyjs = `quizupdate/${safeUid}.json`;  // یا `quiz/${safeUid}.json` بسته به نیاز
+
+            // ساخت محتوای JSON
+            const jsonContent = JSON.stringify({
+                name: name,
+                hearts: hearts,
+                score: score
+            }, null, 2);  // برای خوانایی بهتر
+
+            try {
+                // استفاده از S3 (از تنظیمات موجود شما)
+                const params = {
+                    Body: jsonContent,
+                    Bucket: 'baranacheckit',
+                    Key: keyjs,
+                    ContentType: 'application/json'  // اختیاری: برای مشخص کردن نوع فایل
+                };
+                await s3.send(new PutObjectCommand(params));
+            } catch (error) {
+                log.error('خطا در ذخیره‌سازی در S3:', error.message);
+                socket.emit('saveUserStateResponse', { success: false, error: error.message });
+            }
+        });
         socket.on('join', async (dataObject, cb) => {
             if (!roomExists(socket)) {
                 return cb({
@@ -2189,6 +2322,95 @@ function startServer() {
                 callback({ error: err.message });
             }
         });
+        // =====================
+        // QUIZ HANDLERS
+        // =====================
+
+        // شروع / ایجاد کوییز توسط مدیر
+        socket.on('quiz:create', ({ question, options, correctIndex, duration, points }) => {
+            if (!roomExists(socket)) return;
+
+            const room = getRoom(socket);
+            if (!room) return;
+
+            if (room.activeQuizTimer) {
+                clearTimeout(room.activeQuizTimer);
+                room.activeQuizTimer = null;
+            }
+
+            if (!room.quizCounter) room.quizCounter = 0;
+            const id = ++room.quizCounter;
+
+            room.activeQuiz = {
+                id,
+                question,
+                options,
+                correctIndex: Number(correctIndex),
+                duration: Number(duration),
+                remainingSeconds: Number(duration),
+                points: Number(points) || 0,   // ✅ امتیاز سوال
+                closed: false,
+                answers: {},
+            };
+
+            room.sendToAll('quizState', {
+                id,
+                question,
+                options,
+                duration: Number(duration),
+                remainingSeconds: Number(duration),
+                closed: false,
+                points: Number(points) || 0,   // اختیاری، اگر خواستی سمت کلاینت هم بداند
+            });
+
+            room.activeQuizTimer = setTimeout(() => {
+                finishQuiz(room);
+            }, Number(duration) * 1000);
+        });
+
+
+
+        socket.on('quiz:answer', ({ quizId, optionIndex }) => {
+            if (!roomExists(socket)) return;
+
+            const room = getRoom(socket);
+            if (!room || !room.activeQuiz) return;
+
+            const quiz = room.activeQuiz;
+            if (quiz.closed) return;
+
+            const peer = getPeer(socket);
+            const name =
+                (peer && peer.peer_info && peer.peer_info.peer_name) ||
+                peer?.peer_name ||
+                'Unknown';
+
+            if (!quiz.answers) quiz.answers = {};
+
+            quiz.answers[socket.id] = {
+                name,
+                optionIndex: Number(optionIndex),
+            };
+        });
+
+
+
+        socket.on('quiz:finish', ({ quizId }) => {
+            if (!roomExists(socket)) return;
+
+            const room = getRoom(socket);
+            if (!room || !room.activeQuiz) return;
+
+            const quiz = room.activeQuiz;
+            if (!quiz || quiz.id !== quizId || quiz.closed) return;
+
+            finishQuiz(room);
+        });
+
+
+        // اگر خواستی می‌توانی به صورت Optional بگویی هنگام join، اگر کوییزی فعال است برای کلاینت جدید هم ارسال شود.
+        // مثلا:
+        // socket.emit('quizState', {...room.activeQuiz}) بعد از join موفق
 
         socket.on('consume', async ({ consumerTransportId, producerId, rtpCapabilities, type }, callback) => {
             if (!roomExists(socket)) {
@@ -3593,6 +3815,49 @@ function startServer() {
         });
 
         // Helpers
+        function finishQuiz(room) {
+            const quiz = room.activeQuiz;
+            if (!quiz || quiz.closed) return;
+
+            quiz.closed = true;
+
+            const answers = quiz.answers || {};
+            const results = Object.entries(answers).map(([socketId, answer]) => ({
+                peerId: socketId,
+                name: answer.name,
+                optionIndex: Number(answer.optionIndex),
+                isCorrect: Number(answer.optionIndex) === Number(quiz.correctIndex),
+            }));
+
+            const totalAnswers = results.length;
+            const correctCount = results.filter((r) => r.isCorrect).length;
+
+            const payload = {
+                quiz: {
+                    id: quiz.id,
+                    question: quiz.question,
+                    options: quiz.options,
+                    correctIndex: quiz.correctIndex,
+                    points: quiz.points || 0,           // ✅ امتیاز سوال
+                },
+                summary: {
+                    totalAnswers,
+                    correctCount,
+                },
+                byUser: results,                       // ✅ همین را کلاینت استفاده می‌کند
+            };
+
+            room.sendToAll('quizResults', payload);
+
+            room.activeQuiz = null;
+            if (room.activeQuizTimer) {
+                clearTimeout(room.activeQuizTimer);
+                room.activeQuizTimer = null;
+            }
+        }
+
+
+
 
         async function handleJoinWebHook(room_id, peer_info) {
             // handle WebHook

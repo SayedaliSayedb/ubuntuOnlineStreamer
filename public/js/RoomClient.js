@@ -223,6 +223,9 @@ class RoomClient {
         joinRoomWithScreen,
         isSpeechSynthesisSupported,
         transcription,
+        userHearts = 0,
+        userScore = 0,
+        sider = 0,
         successCallback
     ) {
         this.room_id = room_id;
@@ -231,6 +234,27 @@ class RoomClient {
         this.peer_uuid = peer_uuid;
         this.peer_info = peer_info;
         this.peer_avatar = peer_info.peer_avatar;
+        const params = new URLSearchParams(window.location.search);
+
+        const hParam = params.get('hearts');
+        const sParam = params.get('score');
+        const sliderm = params.get('sider');
+
+        const urlHearts = hParam !== null ? parseInt(hParam, 10) : NaN;
+        const urlScore = sParam !== null ? parseInt(sParam, 10) : NaN;
+
+        // (اختیاری) fallback اگر روزی از window.__GAME_STATE__ هم استفاده کردید
+        const gs = (window && window.__GAME_STATE__) ? window.__GAME_STATE__ : {};
+        const gsHearts = Number(gs.hearts);
+        const gsScore = Number(gs.score);
+
+        // اولویت با URL است، اگر نبود از __GAME_STATE__، اگر نبود پیشفرض
+        const heartsValue = Number.isFinite(urlHearts) ? urlHearts : (Number.isFinite(gsHearts) ? gsHearts : 0);
+        const scoreValue = Number.isFinite(urlScore) ? urlScore : (Number.isFinite(gsScore) ? gsScore : 0);
+        this.sider = sliderm;
+        this.userHearts = Math.max(0, heartsValue);
+        this.userScore = Math.max(0, scoreValue);
+        this.updateUserInfoBox();
 
         // Device type
         this.isDesktopDevice = peer_info.is_desktop_device;
@@ -325,20 +349,18 @@ class RoomClient {
         this.isEditorPinned = false;
         this.isSpeechSynthesisSupported = isSpeechSynthesisSupported;
         this.isParticipantsOpen = false;
-        this.speechInMessages = false;
-        this.showChatOnMessage = true;
-        this.isChatBgTransparent = false;
-        this.isVideoPinned = false;
-        this.isChatPinned = false;
-        this.isChatMaximized = false;
-        this.isToggleUnreadMsg = false;
-        this.isToggleRaiseHand = false;
-        this.pinnedVideoPlayerId = null;
-        this.camVideo = false;
-        this.videoQualitySelectedIndex = 0;
-
         this.pollSelectedOptions = {};
         this.chatGPTContext = [];
+        this.deepSeekContext = [];
+        this.chatMessages = [];
+        this.leftMsgAvatar = null;
+        this.rightMsgAvatar = null;
+
+        this.isPresenter = !!this.peer_info.peer_presenter;
+        this.activeQuiz = null;           // وضعیت مسابقه فعال
+        this.quizResults = null;          // نتیجه مسابقه (برای مدیریت)
+        this.quizCountdownInterval = null;
+        this.quizDomInitialized = false;
         this.deepSeekContext = [];
         this.chatMessages = [];
         this.leftMsgAvatar = null;
@@ -464,13 +486,25 @@ class RoomClient {
             await this.join(data);
             this.initSockets();
             this._isConnected = true;
-            successCallback();
+            //successCallback();
         });
     }
 
     // ####################################################
     // GET STARTED
     // ####################################################
+    updateUserInfoBox() {
+        const nameBox = document.getElementById('userInfoName');
+        const heartBox = document.getElementById('userInfoHearts');
+        const scoreBox = document.getElementById('userInfoScore');
+
+        if (!nameBox || !heartBox || !scoreBox) return;
+
+        nameBox.textContent = this.peer_info?.peer_name || 'User';
+        heartBox.textContent = `❤️ ${this.userHearts}`;
+        scoreBox.textContent = `⭐ ${this.userScore}`;
+    }
+
 
     async createRoom(room_id) {
         await this.socket
@@ -663,13 +697,15 @@ class RoomClient {
             }
             console.log('07.1 ----> SERVER SYNC RECORDING', this.recording);
             // ###################################################################################################
-
             // Handle Room moderator rules
             if (room.moderator && (!isRulesActive || !isPresenter)) {
                 console.log('07.2 ----> ROOM MODERATOR', room.moderator);
-
+                
                 // Update `this._moderator` with properties from `room.moderator`, keeping existing ones.
-                this._moderator = { ...this._moderator, ...room.moderator };
+                this._moderator = {
+                    ...this._moderator,
+                    ...room.moderator
+                };
 
                 if (this._moderator.video_start_privacy || localStorageSettings.moderator_video_start_privacy) {
                     this.peer_info.peer_video_privacy = true;
@@ -679,16 +715,17 @@ class RoomClient {
                         active: true,
                         broadcast: true,
                     });
-                    this.userLog('warning', 'The Moderator starts your video in privacy mode', 'top-end');
+                    this.userLog('warning', 'مدیر جلسه ویدئو را در حالت خصوصی شروع کرده است', 'top-end');
                 }
+
                 if (this._moderator.audio_start_muted && this._moderator.video_start_hidden) {
-                    this.userLog('warning', 'The Moderator disabled your audio and video', 'top-end');
+                    //this.userLog('warning', 'مدیر جلسه صدا و تصویر شما را غیرفعال کرده است', 'top-end');
                 } else {
                     if (this._moderator.audio_start_muted && !this._moderator.video_start_hidden) {
-                        this.userLog('warning', 'The Moderator disabled your audio', 'top-end');
+                        this.userLog('warning', 'مدیر جلسه صدای شما را غیرفعال کرده است', 'top-end');
                     }
                     if (!this._moderator.audio_start_muted && this._moderator.video_start_hidden) {
-                        this.userLog('warning', 'The Moderator disabled your video', 'top-end');
+                        this.userLog('warning', 'مدیر جلسه تصویر شما را غیرفعال کرده است', 'top-end');
                     }
                 }
                 //
@@ -757,7 +794,7 @@ class RoomClient {
                 continue;
             }
 
-            const canSetVideoOff = !isBroadcastingEnabled || (isBroadcastingEnabled && peer_presenter);
+            const canSetVideoOff = isPresenter;
 
             if (!peer_video && canSetVideoOff) {
                 console.log('Detected peer video off ' + peer_name);
@@ -1156,6 +1193,9 @@ class RoomClient {
         this.socket.on('endRTMPfromURL', this.handleEndRTMPfromURL);
         this.socket.on('errorRTMPfromURL', this.handleErrorRTMPfromURL);
         this.socket.on('updatePolls', this.handleUpdatePolls);
+        // ==== QUIZ SOCKET EVENTS ====
+        this.socket.on('quizState', this.handleQuizState);
+        this.socket.on('quizResults', this.handleQuizResults);
         this.socket.on('editorChange', this.handleEditorChange);
         this.socket.on('editorActions', this.handleEditorActions);
         this.socket.on('editorUpdate', this.handleEditorUpdate);
@@ -1207,6 +1247,9 @@ class RoomClient {
             this.setVideoOff(data, true);
         }
     };
+
+
+
 
     handleRemoveMe = (data) => {
         console.log('SocketOn Remove me:', data);
@@ -1570,6 +1613,8 @@ class RoomClient {
             video: peer_video,
             screen: peer_screen,
             notify: 0,
+            hearts: this.userHearts,
+            score: this.userScore,
             isPresenter: peer_presenter || isPresenter,
         };
         if (peer_token) queryParams.token = peer_token;
@@ -3171,9 +3216,9 @@ class RoomClient {
                 const buttonGroup = document.createElement('div');
                 buttonGroup.className = 'button-group';
 
-                BUTTONS.consumerVideo.sendMessageButton && buttonGroup.appendChild(sm);
-                BUTTONS.consumerVideo.sendFileButton && buttonGroup.appendChild(sf);
-                BUTTONS.consumerVideo.sendVideoButton && buttonGroup.appendChild(sv);
+                //BUTTONS.consumerVideo.sendMessageButton && buttonGroup.appendChild(sm);
+                //BUTTONS.consumerVideo.sendFileButton && buttonGroup.appendChild(sf);
+                //BUTTONS.consumerVideo.sendVideoButton && buttonGroup.appendChild(sv);
                 BUTTONS.consumerVideo.geolocationButton && buttonGroup.appendChild(gl);
                 BUTTONS.consumerVideo.banButton && buttonGroup.appendChild(ban);
                 BUTTONS.consumerVideo.ejectButton && buttonGroup.appendChild(ko);
@@ -3408,9 +3453,9 @@ class RoomClient {
         pv.value = 100;
 
         if (remotePeer) {
-            sf = this.createButton('remotePeer___' + peer_id + '___sendFile', html.sendFile);
-            sm = this.createButton('remotePeer___' + peer_id + '___sendMsg', html.sendMsg);
-            sv = this.createButton('remotePeer___' + peer_id + '___sendVideo', html.sendVideo);
+            //sf = this.createButton('remotePeer___' + peer_id + '___sendFile', html.sendFile);
+            //sm = this.createButton('remotePeer___' + peer_id + '___sendMsg', html.sendMsg);
+            //sv = this.createButton('remotePeer___' + peer_id + '___sendVideo', html.sendVideo);
             gl = this.createButton('remotePeer___' + peer_id + '___geoLocation', html.geolocation);
             ban = this.createButton('remotePeer___' + peer_id + '___ban', html.ban);
             ko = this.createButton('remotePeer___' + peer_id + '___kickOut', html.kickOut);
@@ -3442,9 +3487,9 @@ class RoomClient {
             BUTTONS.videoOff.ejectButton && vb.appendChild(ko);
             BUTTONS.videoOff.banButton && vb.appendChild(ban);
             BUTTONS.videoOff.geolocationButton && vb.appendChild(gl);
-            BUTTONS.videoOff.sendVideoButton && vb.appendChild(sv);
-            BUTTONS.videoOff.sendFileButton && vb.appendChild(sf);
-            BUTTONS.videoOff.sendMessageButton && vb.appendChild(sm);
+            //BUTTONS.videoOff.sendVideoButton && vb.appendChild(sv);
+            //BUTTONS.videoOff.sendFileButton && vb.appendChild(sf);
+            //BUTTONS.videoOff.sendMessageButton && vb.appendChild(sm);
         }
         BUTTONS.videoOff.audioVolumeInput && vb.appendChild(pv);
 
@@ -6153,6 +6198,425 @@ class RoomClient {
         const roomName = this.room_id.trim();
         return `Poll_${roomName}_${dateTime}.txt`;
     }
+    // ##############################################
+    // QUIZ (مسابقه چند گزینه‌ای)
+    // ##############################################
+
+    toggleQuiz() {
+        const quizRoom = document.getElementById('quizRoom');
+        if (!quizRoom) return;
+        quizRoom.classList.toggle('show');
+
+        if (quizRoom.classList.contains('show')) {
+            this.sound('open');
+        }
+        if (!this.quizDomInitialized) {
+            this.initQuizDom();
+        }
+
+        
+    }
+
+    initQuizDom() {
+        if (this.quizDomInitialized) return;
+
+        const hostSection = document.getElementById('quizHostSection');
+        const quizForm = document.getElementById('quizCreateForm');
+        const quizFinishButton = document.getElementById('quizFinishButton');
+        const submitAnswerButton = document.getElementById('quizSubmitAnswerButton');
+
+        if (this.isPresenter) {
+            if (hostSection) hostSection.style.display = 'block';
+
+            if (quizForm) {
+                quizForm.addEventListener('submit', (e) => this.quizCreateFormSubmit(e));
+            }
+
+            if (quizFinishButton) {
+                quizFinishButton.addEventListener('click', () => {
+                    if (!this.activeQuiz) return;
+                    this.socket.emit('quiz:finish', { quizId: this.activeQuiz.id });
+                });
+            }
+        } else {
+            // برای ویوِرها فرم مدیریت مخفی باشد
+            if (hostSection) hostSection.style.display = 'none';
+        }
+
+        // ❗ خیلی مهم: لیسنر دکمه Submit برای همه (مدیر و بیننده) ثبت شود
+        if (submitAnswerButton) {
+            submitAnswerButton.addEventListener('click', () => this.quizSubmitAnswer());
+        }
+
+        this.quizDomInitialized = true;
+    }
+
+    // وقتی از سرور وضعیت مسابقه را می‌گیریم
+    handleQuizState = (quiz) => {
+        // ✅ اول مطمئن شو DOM مسابقه برای این کلاینت مقداردهی شده
+        if (!this.quizDomInitialized) {
+            this.initQuizDom();
+        }
+
+        // اگر کوییزی وجود ندارد، همه‌چیز را ریست کن
+        if (!quiz) {
+            this.activeQuiz = null;
+            this.quizResults = null;
+            this.updateQuizUI();
+            this.updateQuizResultsUI();
+            return;
+        }
+
+        this.activeQuiz = quiz;
+        // به محض آمدن وضعیت جدید، نتیجه‌ی قبلی را پاک کن
+        this.quizResults = null;
+        this.updateQuizUI();
+        this.updateQuizResultsUI();
+    };
+
+
+    updateQuizUI() {
+        const quizRoom = document.getElementById('quizRoom');
+        const activeWrapper = document.getElementById('quizActive');
+        const questionEl = document.getElementById('quizQuestion');
+        const optionsEl = document.getElementById('quizOptionsContainer');
+        const countdownEl = document.getElementById('quizCountdown');
+        const submitAnswerButton = document.getElementById('quizSubmitAnswerButton');
+        const noHearts = !this.isPresenter && Number(this.userHearts) <= 0;
+        if (!quizRoom || !activeWrapper || !questionEl || !optionsEl || !countdownEl || !submitAnswerButton) {
+            return;
+        }
+
+        // اگر مسابقه‌ای فعال نیست یا بسته شده
+        if (!this.activeQuiz || this.activeQuiz.closed) {
+            activeWrapper.classList.add('hidden');
+            submitAnswerButton.disabled = true;
+            countdownEl.textContent = '';
+            this.clearQuizCountdown();
+            return;
+        }
+        let noHeartsMessage = document.getElementById('noHeartsMessage');
+
+        if (!noHeartsMessage) {
+            noHeartsMessage = document.createElement('div');
+            noHeartsMessage.id = 'noHeartsMessage';
+            noHeartsMessage.style.marginTop = '12px';
+            noHeartsMessage.style.color = '#ff4d4f';
+            noHeartsMessage.style.fontWeight = 'bold';
+            noHeartsMessage.style.textAlign = 'center';
+            noHeartsMessage.innerText = '❤️ قلب شما تمام شده و نمی‌توانید مسابقه را ادامه بدهید';
+
+            submitAnswerButton.parentNode.appendChild(noHeartsMessage);
+        }
+
+        // نمایش پنجره‌ی مسابقه برای همه
+        quizRoom.classList.add('show');
+        activeWrapper.classList.remove('hidden');
+
+        // متن سؤال
+        questionEl.textContent = this.activeQuiz.question || '';
+
+        // ساخت گزینه‌ها برای همه (مدیر + بیننده‌ها)
+        optionsEl.innerHTML = '';
+
+        (this.activeQuiz.options || []).forEach((opt, index) => {
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'option';
+
+            const input = document.createElement('input');
+            input.type = 'radio';
+            input.name = 'quizOption';
+            input.value = String(index);
+            input.id = `quizOption_${index}`;
+            input.disabled = noHearts;
+
+            const label = document.createElement('label');
+            label.setAttribute('for', input.id);
+            label.textContent = opt;
+
+            optionDiv.appendChild(input);
+            optionDiv.appendChild(label);
+            optionsEl.appendChild(optionDiv);
+        });
+        // دکمه ی ارسال برای همه قابل دیدن است
+        if (noHearts) {
+            submitAnswerButton.style.display = 'none';
+            noHeartsMessage.style.display = 'block';
+        } else {
+            submitAnswerButton.style.display = 'inline-flex';
+            submitAnswerButton.disabled = !!this.activeQuiz.closed;
+            noHeartsMessage.style.display = 'none';
+        }
+        // تایمر
+        this.startQuizCountdown();
+    }
+
+
+
+    startQuizCountdown() {
+        const countdownEl = document.getElementById('quizCountdown');
+        if (!countdownEl || !this.activeQuiz) return;
+
+        this.clearQuizCountdown();
+
+        let remaining =
+            parseInt(
+                this.activeQuiz.remainingSeconds != null
+                    ? this.activeQuiz.remainingSeconds
+                    : this.activeQuiz.duration,
+                10
+            ) || 0;
+
+        if (remaining <= 0) {
+            countdownEl.textContent = '';
+            return;
+        }
+
+        countdownEl.textContent = remaining;
+
+        this.quizCountdownInterval = setInterval(() => {
+            remaining -= 1;
+            if (remaining <= 0) {
+                this.clearQuizCountdown();
+                countdownEl.textContent = '0';
+                const submitAnswerButton = document.getElementById('quizSubmitAnswerButton');
+                if (submitAnswerButton) submitAnswerButton.disabled = true;
+            } else {
+                countdownEl.textContent = remaining;
+            }
+        }, 1000);
+    }
+
+    clearQuizCountdown() {
+        if (this.quizCountdownInterval) {
+            clearInterval(this.quizCountdownInterval);
+            this.quizCountdownInterval = null;
+        }
+    }
+
+    quizSubmitAnswer() {
+        if (!this.activeQuiz || this.activeQuiz.closed) return;
+        if (!this.isPresenter && Number(this.userHearts) <= 0) {
+            Swal.fire({
+                background: swalBackground,
+                position: 'top',
+                title: 'قلب شما تمام شده و امکان پاسخ دادن ندارید',
+                timer: 2000,
+                showConfirmButton: false,
+            });
+            return;
+        }
+
+        const selected = document.querySelector('input[name="quizOption"]:checked');
+        if (!selected) {
+            Swal.fire({
+                background: swalBackground,
+                position: 'top',
+                title: 'یک گزینه را انتخاب کنید',
+                timer: 1500,
+                showConfirmButton: false,
+            });
+            return;
+        }
+
+        const optionIndex = parseInt(selected.value, 10) || 0;
+
+        // ✅ هر بار کلیک، آخرین جواب را می‌فرستیم؛ سرور آن را overwrite می‌کند
+        this.socket.emit('quiz:answer', {
+            quizId: this.activeQuiz.id,
+            optionIndex,
+        });
+
+        // ❌ دیگه نباید جلوی تغییر مجدد را بگیریم
+        // this.activeQuiz.hasAnswered = true;
+
+        // ❌ دکمه را disable نکن، که تا پایان مسابقه بشود تغییر داد
+        // const submitAnswerButton = document.getElementById('quizSubmitAnswerButton');
+        // if (submitAnswerButton) submitAnswerButton.disabled = true;
+
+        Swal.fire({
+            background: swalBackground,
+            position: 'top',
+            title: 'پاسخ شما ثبت شد (می‌توانید تا پایان مسابقه تغییر دهید)',
+            timer: 1500,
+            showConfirmButton: false,
+        });
+    }
+
+
+    handleQuizResults = (data) => {
+        this.quizResults = data || null;
+
+        // ✅ آپدیت قلب و امتیاز فقط برای خود کاربر
+        // ✅ آپدیت قلب و امتیاز فقط برای خود کاربر
+        if (data && data.byUser) {
+            const myName = this.peer_info?.peer_name;
+            const myRow = data.byUser.find((row) => row.name === myName);
+
+            const questionPoints =
+                data.quiz && typeof data.quiz.points === 'number'
+                    ? data.quiz.points
+                    : 0;
+
+            // فقط برای بیننده‌ها (Presenter جریمه نشود)
+            if (!this.isPresenter) {
+                if (myRow) {
+                    if (myRow.isCorrect) {
+                        // جواب درست -> امتیاز اضافه شود
+                        this.userScore += questionPoints;
+                    } else {
+                        // جواب غلط -> یک قلب کم شود (حداقل ۰)
+                        if (this.userHearts > 0) this.userHearts -= 1;
+                    }
+                } else {
+                    // ✅ هیچ پاسخی ثبت نکرده -> یک قلب کم شود (حداقل ۰)
+                    if (this.userHearts > 0) this.userHearts -= 1;
+                }
+
+                try {
+                    // داده‌ها را به سرور emit کنید
+                    this.socket.emit('saveUserState', {
+                        name: this.peer_name,      // نام کاربر
+                        hearts: this.userHearts,   // تعداد hearts
+                        score: this.userScore,     // امتیاز
+                        usid: this.sider       // usid (فرض کنید peer_uuid همان usid است؛ اگر نیست، تغییر دهید)
+                    });
+                } catch (error) {
+                    console.log('خطا در ذخیره‌سازی:', error);
+                }
+                this.updateUserInfoBox();
+            }
+        }
+
+
+        // مسابقه تمام شده
+        if (this.activeQuiz) {
+            this.activeQuiz.closed = true;
+        }
+        this.updateQuizUI();
+        this.updateQuizResultsUI();
+    };
+
+
+
+
+    updateQuizResultsUI() {
+        const wrapper = document.getElementById('quizResultsWrapper');
+        const summaryEl = document.getElementById('quizResultsSummary');
+        const listEl = document.getElementById('quizResultsList');
+
+        if (!wrapper || !summaryEl || !listEl) return;
+
+        if (!this.quizResults) {
+            wrapper.classList.add('hidden');
+            summaryEl.textContent = '';
+            listEl.innerHTML = '';
+            return;
+        }
+
+        const quiz = this.quizResults.quiz || {};
+        const summary = this.quizResults.summary || {};
+        const byUser = this.quizResults.byUser || [];
+        const quizCloseBtn = document.getElementById('quizCloseBtn');
+        const questionPoints =
+            typeof quiz.points === 'number' ? quiz.points : 0;
+        if (quizCloseBtn) {
+            quizCloseBtn.style.display = 'inline-flex';
+        }
+        // ✅ اگر مدیر هستیم: لیست کامل را ببینیم
+        if (this.isPresenter) {
+            wrapper.classList.remove('hidden');
+
+            const total = summary.totalAnswers || 0;
+            const correct = summary.correctCount || 0;
+
+            summaryEl.textContent = `Total answers: ${total}, Correct: ${correct}, Points/question: ${questionPoints}`;
+
+            listEl.innerHTML = '';
+            byUser.forEach((row) => {
+                const li = document.createElement('li');
+                const name = row.name || 'Unknown';
+                const optionIndex = row.optionIndex != null ? row.optionIndex + 1 : '-';
+                const isCorrect = !!row.isCorrect;
+                const earnedPoints = isCorrect ? questionPoints : 0;
+
+                li.textContent = `${name} → option ${optionIndex} ${isCorrect ? '✅' : '❌'} (+${earnedPoints})`;
+                listEl.appendChild(li);
+            });
+        } else {
+            // ✅ بیننده: فقط نتیجهٔ خودش را ببیند
+            const myName = this.peer_info?.peer_name;
+            const myRow = byUser.find((row) => row.name === myName);
+
+            wrapper.classList.remove('hidden');
+
+            let msg = 'شما پاسخی ثبت نکردید.';
+            if (myRow) {
+                if (myRow.isCorrect) {
+                    msg = 'آفرین! پاسخ شما درست است ✅';
+                } else {
+                    msg = 'پاسخ شما اشتباه بود ❌';
+                }
+            }
+
+            summaryEl.textContent = msg;
+            // لیست را برای بیننده خالی نگه می‌داریم (هیچ‌کس دیگر را نمی‌بیند)
+            listEl.innerHTML = '';
+        }
+    }
+
+
+    // فرم ساخت مسابقه توسط مدیریت
+    quizCreateFormSubmit(e) {
+        e.preventDefault();
+
+        const questionEl = document.getElementById('quizQuestionInput');
+        const optionsEl = document.getElementById('quizOptionsInput');
+        const correctIndexEl = document.getElementById('quizCorrectIndexInput');
+        const durationEl = document.getElementById('quizDurationInput');
+        const pointsEl = document.getElementById('quizPointsInput');
+
+        if (!questionEl || !optionsEl || !correctIndexEl || !durationEl || !pointsEl) return;
+
+        const question = questionEl.value.trim();
+        const options = optionsEl.value
+            .split('\n')
+            .map((o) => o.trim())
+            .filter((o) => o.length > 0);
+
+        if (!question || options.length < 2) {
+            Swal.fire({
+                background: swalBackground,
+                position: 'top',
+                title: 'Enter question and at least 2 options',
+                timer: 2000,
+                showConfirmButton: false,
+            });
+            return;
+        }
+
+        let correctIndex = parseInt(correctIndexEl.value, 10) || 1;
+        // تبدیل به ایندکس صفرپایه
+        correctIndex = correctIndex - 1;
+        if (correctIndex < 0) correctIndex = 0;
+        if (correctIndex >= options.length) correctIndex = options.length - 1;
+
+        const duration = parseInt(durationEl.value, 10) || 30;
+        const points = parseInt(pointsEl.value, 10) || 0;
+        this.socket.emit('quiz:create', {
+            question,
+            options,
+            correctIndex,
+            duration,
+            points,
+        });
+
+        // اختیاری: فرم را ریست کن
+        // questionEl.value = '';
+        // optionsEl.value = '';
+        // correctIndexEl.value = 1;
+    }
+
 
     // ####################################################
     // EDITOR
@@ -9641,14 +10105,23 @@ class RoomClient {
         switch (data.type) {
             case 'audio_cant_unmute':
                 this._moderator.audio_cant_unmute = data.status;
-                this._moderator.audio_cant_unmute ? hide(tabAudioDevicesBtn) : show(tabAudioDevicesBtn);
+                if (!isPresenter && this._moderator.audio_cant_unmute) {
+                    hide(tabAudioDevicesBtn);
+                }
+                else {
+                    show(tabAudioDevicesBtn)
+                }
                 rc.roomMessage('audio_cant_unmute', data.status);
                 break;
             case 'video_cant_unhide':
                 this._moderator.video_cant_unhide = data.status;
-                this._moderator.video_cant_unhide ? hide(tabVideoDevicesBtn) : show(tabVideoDevicesBtn);
+                if (!isPresenter && this._moderator.video_cant_unhide) {
+                    hide(tabVideoDevicesBtn);
+                } else {
+                    show(tabVideoDevicesBtn);
+                }
                 rc.roomMessage('video_cant_unhide', data.status);
-                break;
+                break;;
             case 'screen_cant_share':
                 this._moderator.screen_cant_share = data.status;
                 rc.roomMessage('screen_cant_share', data.status);

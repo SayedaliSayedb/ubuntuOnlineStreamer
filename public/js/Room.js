@@ -211,7 +211,11 @@ const initSpeakerSelect = getId('initSpeakerSelect');
 // VIRTUAL BACKGROUND DEFAULT IMAGES AND INIT CLASS
 // ####################################################
 
-const virtualBackgrounds = Object.values(image.virtualBackground);
+const virtualBackgrounds =
+    window.image && window.image.virtualBackground
+        ? Object.values(window.image.virtualBackground)
+        : [];
+
 
 const virtualBackground = new VirtualBackground();
 
@@ -485,6 +489,7 @@ function refreshMainButtonsToolTipPlacement() {
         setTippy('fullScreenButton', 'Toggle full screen', placement);
         setTippy('emojiRoomButton', 'Toggle emoji reaction', placement);
         setTippy('pollButton', 'Toggle the poll', placement);
+        setTippy('quizButton', 'Toggle the quiz', placement);
         setTippy('editorButton', 'Toggle the editor', placement);
         setTippy('transcriptionButton', 'Toggle transcription', placement);
         setTippy('whiteboardButton', 'Toggle the whiteboard', placement);
@@ -1462,7 +1467,7 @@ async function shareRoom(useNavigator = false) {
     }
     function share() {
         sound('open');
-
+        2
         Swal.fire({
             background: swalBackground,
             position: 'center',
@@ -1495,7 +1500,8 @@ async function shareRoom(useNavigator = false) {
                 rc.shareScreen();
             }
         });
-        makeRoomQR();
+        roomIsReady();
+       // makeRoomQR();
     }
 }
 
@@ -1617,43 +1623,70 @@ function joinRoom(peer_name, room_id) {
 }
 
 function roomIsReady() {
+    console.log('roomIsReady اجرا شد! وضعیت: ', {
+        isPresenter: rc.isPresenter,  // rc از RoomClient.js
+        isConnected: rc._isConnected,
+        peer_info: rc.peer_info
+    });
     startRoomSession();
 
-    makeRoomPopupQR();
+    //makeRoomPopupQR();
 
-    if (peer_avatar && isImageURL(peer_avatar)) {
-        myProfileAvatar.setAttribute('src', peer_avatar);
-    } else if (rc.isValidEmail(peer_name)) {
-        myProfileAvatar.style.borderRadius = `50px`;
-        myProfileAvatar.setAttribute('src', rc.genGravatar(peer_name));
-    } else {
-        myProfileAvatar.setAttribute('src', rc.genAvatarSvg(peer_name, 64));
+    try {
+        if (peer_avatar && isImageURL(peer_avatar)) {
+            myProfileAvatar.setAttribute('src', peer_avatar);
+        } else if (rc.isValidEmail(peer_name)) {
+            myProfileAvatar.style.borderRadius = `50px`;
+            myProfileAvatar.setAttribute('src', rc.genGravatar(peer_name));
+        } else {
+            myProfileAvatar.setAttribute('src', rc.genAvatarSvg(peer_name, 64));
+        }
+    } catch (e) {
+
     }
 
     const controlDiv = getId('control');
-    if (controlDiv) {
-        const visibleButtons = Array.from(controlDiv.children).filter(
-            (el) => el.offsetParent !== null && !el.classList.contains('hidden')
-        );
-        BUTTONS.main.extraButton || visibleButtons.length > 0 ? show(toggleExtraButton) : hide(toggleExtraButton);
+
+    // اگر کاربر Presenter نیست، کلاً این دکمه را مخفی کن
+    if (!isPresenter) {
+        hide(toggleExtraButton);
+
+        hide(chatButton);
+        hide(participantsButton);
+        hide(exitButton);
+        hide(shareButton);
+        hide(hideMeButton);
+        hide(raiseHandButton);
     } else {
-        show(toggleExtraButton);
+        show(chatButton);
+        show(participantsButton);
+        show(exitButton);
+        show(shareButton);
+        show(hideMeButton);
+        show(raiseHandButton);
+        if (controlDiv) {
+            const visibleButtons = Array.from(controlDiv.children).filter(
+                (el) => el.offsetParent !== null && !el.classList.contains('hidden')
+            );
+            BUTTONS.main.extraButton || visibleButtons.length > 0
+                ? show(toggleExtraButton)
+                : hide(toggleExtraButton);
+        } else {
+            show(toggleExtraButton);
+        }
     }
 
-    BUTTONS.main.exitButton && show(exitButton);
-    BUTTONS.main.shareButton && show(shareButton);
-    BUTTONS.main.hideMeButton && show(hideMeButton);
     if (BUTTONS.settings.tabRecording) {
         show(startRecButton);
     } else {
         hide(startRecButton);
         hide(tabRecordingBtn);
     }
-    BUTTONS.main.chatButton && show(chatButton);
-    BUTTONS.main.participantsButton && show(participantsButton);
+    //BUTTONS.main.chatButton && show(chatButton);
+    //BUTTONS.main.participantsButton && show(participantsButton);
     BUTTONS.main.pollButton && show(pollButton);
+    BUTTONS.main.pollButton && show(quizButton);
     BUTTONS.main.editorButton && show(editorButton);
-    BUTTONS.main.raiseHandButton && show(raiseHandButton);
     BUTTONS.main.emojiRoomButton && show(emojiRoomButton);
     !BUTTONS.chat.chatSaveButton && hide(chatSaveButton);
     BUTTONS.chat.chatEmojiButton && show(chatEmojiButton);
@@ -1706,7 +1739,9 @@ function roomIsReady() {
         rc.makeDraggable(transcriptionRoom, transcriptionHeader);
         if (navigator.getDisplayMedia || navigator.mediaDevices.getDisplayMedia) {
             if (BUTTONS.main.startScreenButton) {
-                show(startScreenButton);
+                if (isPresenter) show(startScreenButton);
+                else hide(startScreenButton);
+                    
                 show(ScreenQualityDiv);
                 show(ScreenFpsDiv);
             }
@@ -1734,7 +1769,14 @@ function roomIsReady() {
     }
     BUTTONS.main.whiteboardButton && show(whiteboardButton);
     if (BUTTONS.main.documentPiPButton && showDocumentPipBtn) show(documentPiPButton);
-    BUTTONS.main.settingsButton && show(settingsButton);
+
+    if (!isPresenter) {
+        hide(settingsButton);
+    }
+    else {
+        show(settingsButton);
+    }
+    handleButtons();
     isAudioAllowed ? show(stopAudioButton) : BUTTONS.main.startAudioButton && show(startAudioButton);
     isVideoAllowed ? show(stopVideoButton) : BUTTONS.main.startVideoButton && show(startVideoButton);
     BUTTONS.settings.activeRooms && show(activeRoomsButton);
@@ -1755,7 +1797,7 @@ function roomIsReady() {
     ) {
         rc.showVideoImageSelector();
     }
-    handleButtons();
+
     handleSelects();
     handleInputs();
     handleChatEmojiPicker();
@@ -2066,6 +2108,15 @@ function handleButtons() {
     pollCloseBtn.onclick = () => {
         rc.togglePoll();
     };
+    // Quiz (مسابقه)
+    if (typeof quizButton !== 'undefined') {
+        quizButton.onclick = () => {
+            rc.toggleQuiz();
+        };
+    }
+    quizCloseBtn.onclick = () => {
+        rc.toggleQuiz();
+    };
     pollTogglePin.onclick = () => {
         rc.togglePollPin();
     };
@@ -2249,7 +2300,7 @@ function handleButtons() {
     startAudioButton.onclick = async () => {
         const moderator = rc.getModerator();
         if (moderator.audio_cant_unmute) {
-            return userLog('warning', 'The moderator does not allow you to unmute', 'top-end', 6000);
+            return userLog('warning', 'دسترسی به میکروفن فعلا امکانش نیست', 'top-end', 6000);
         }
         if (isPushToTalkActive) return;
         setAudioButtonsDisabled(true);
@@ -2280,7 +2331,7 @@ function handleButtons() {
     startVideoButton.onclick = async () => {
         const moderator = rc.getModerator();
         if (moderator.video_cant_unhide) {
-            return userLog('warning', 'The moderator does not allow you to unhide', 'top-end', 6000);
+            return userLog('warning', 'دسترسی به دوربین فعلا امکانش نیست', 'top-end', 6000);
         }
         setVideoButtonsDisabled(true);
         if (!isEnumerateVideoDevices) await initEnumerateVideoDevices();
@@ -2971,7 +3022,12 @@ function handleSelects() {
         wbIsBgTransparent = !wbIsBgTransparent;
         wbIsBgTransparent ? wbCanvasBackgroundColor('rgba(0, 0, 0, 0.100)') : setTheme();
         if (BUTTONS.main.extraButton) {
-            wbIsBgTransparent ? hide(toggleExtraButton) : show(toggleExtraButton);
+            if (isPresenter) {
+                wbIsBgTransparent ? hide(toggleExtraButton) : show(toggleExtraButton);
+            }
+            else {
+                hide(toggleExtraButton);
+            }
         }
     };
     whiteboardGridBtn.onclick = (e) => {
@@ -5010,7 +5066,12 @@ function whiteboardAction(data, emit = true) {
             if (wbIsOpen) {
                 toggleWhiteboard();
                 if (BUTTONS.main.extraButton) {
-                    show(toggleExtraButton);
+                    if (isPresenter) {
+                        show(toggleExtraButton);
+                    }
+                    else {
+                        hide(toggleExtraButton);
+                    }
                 }
             }
             break;
