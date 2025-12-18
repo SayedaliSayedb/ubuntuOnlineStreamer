@@ -9,7 +9,11 @@
  * @license For commercial or closed source, contact us at license.mirotalk@gmail.com or purchase directly via CodeCanyon
  * @license CodeCanyon: https://codecanyon.net/item/mirotalk-sfu-webrtc-realtime-video-conferences/40769970
  * @author  Miroslav Pejic - miroslav.pejic.85@gmail.com
+<<<<<<< HEAD
  * @version 2.0.45
+=======
+ * @version 2.0.39
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
  *
  */
 
@@ -223,9 +227,12 @@ class RoomClient {
         joinRoomWithScreen,
         isSpeechSynthesisSupported,
         transcription,
+<<<<<<< HEAD
         userHearts = 0,
         userScore = 0,
         sider = 0,
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
         successCallback
     ) {
         this.room_id = room_id;
@@ -234,6 +241,7 @@ class RoomClient {
         this.peer_uuid = peer_uuid;
         this.peer_info = peer_info;
         this.peer_avatar = peer_info.peer_avatar;
+<<<<<<< HEAD
         const params = new URLSearchParams(window.location.search);
 
         const hParam = params.get('hearts');
@@ -255,6 +263,8 @@ class RoomClient {
         this.userHearts = Math.max(0, heartsValue);
         this.userScore = Math.max(0, scoreValue);
         this.updateUserInfoBox();
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
 
         // Device type
         this.isDesktopDevice = peer_info.is_desktop_device;
@@ -349,6 +359,21 @@ class RoomClient {
         this.isEditorPinned = false;
         this.isSpeechSynthesisSupported = isSpeechSynthesisSupported;
         this.isParticipantsOpen = false;
+<<<<<<< HEAD
+=======
+        this.speechInMessages = false;
+        this.showChatOnMessage = true;
+        this.isChatBgTransparent = false;
+        this.isVideoPinned = false;
+        this.isChatPinned = false;
+        this.isChatMaximized = false;
+        this.isToggleUnreadMsg = false;
+        this.isToggleRaiseHand = false;
+        this.pinnedVideoPlayerId = null;
+        this.camVideo = false;
+        this.videoQualitySelectedIndex = 0;
+
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
         this.pollSelectedOptions = {};
         this.chatGPTContext = [];
         this.deepSeekContext = [];
@@ -356,6 +381,7 @@ class RoomClient {
         this.leftMsgAvatar = null;
         this.rightMsgAvatar = null;
 
+<<<<<<< HEAD
         this.isPresenter = !!this.peer_info.peer_presenter;
         this.activeQuiz = null;           // وضعیت مسابقه فعال
         this.quizResults = null;          // نتیجه مسابقه (برای مدیریت)
@@ -366,6 +392,8 @@ class RoomClient {
         this.leftMsgAvatar = null;
         this.rightMsgAvatar = null;
 
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
         this.localVideoElement = null;
         this.localVideoStream = null;
         this.localAudioStream = null;
@@ -447,6 +475,7 @@ class RoomClient {
         this.debug = false;
         this.debug ? window.localStorage.setItem('debug', 'mediasoup*') : window.localStorage.removeItem('debug');
 
+<<<<<<< HEAD
         // TEST PURPOSES
         this.test = {
             device: {
@@ -455,6 +484,8 @@ class RoomClient {
             },
         };
 
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
         console.log('06 ----> Load MediaSoup Client v', mediasoupClient.version);
         console.log('06.1 ----> PEER_ID', this.peer_id);
 
@@ -486,13 +517,18 @@ class RoomClient {
             await this.join(data);
             this.initSockets();
             this._isConnected = true;
+<<<<<<< HEAD
             //successCallback();
+=======
+            successCallback();
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
         });
     }
 
     // ####################################################
     // GET STARTED
     // ####################################################
+<<<<<<< HEAD
     updateUserInfoBox() {
         const nameBox = document.getElementById('userInfoName');
         const heartBox = document.getElementById('userInfoHearts');
@@ -505,6 +541,8 @@ class RoomClient {
         scoreBox.textContent = `⭐ ${this.userScore}`;
     }
 
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
 
     async createRoom(room_id) {
         await this.socket
@@ -697,6 +735,7 @@ class RoomClient {
             }
             console.log('07.1 ----> SERVER SYNC RECORDING', this.recording);
             // ###################################################################################################
+<<<<<<< HEAD
             // Handle Room moderator rules
             if (room.moderator && (!isRulesActive || !isPresenter)) {
                 console.log('07.2 ----> ROOM MODERATOR', room.moderator);
@@ -706,6 +745,15 @@ class RoomClient {
                     ...this._moderator,
                     ...room.moderator
                 };
+=======
+
+            // Handle Room moderator rules
+            if (room.moderator && (!isRulesActive || !isPresenter)) {
+                console.log('07.2 ----> ROOM MODERATOR', room.moderator);
+
+                // Update `this._moderator` with properties from `room.moderator`, keeping existing ones.
+                this._moderator = { ...this._moderator, ...room.moderator };
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
 
                 if (this._moderator.video_start_privacy || localStorageSettings.moderator_video_start_privacy) {
                     this.peer_info.peer_video_privacy = true;
@@ -715,6 +763,7 @@ class RoomClient {
                         active: true,
                         broadcast: true,
                     });
+<<<<<<< HEAD
                     this.userLog('warning', 'مدیر جلسه ویدئو را در حالت خصوصی شروع کرده است', 'top-end');
                 }
 
@@ -726,6 +775,18 @@ class RoomClient {
                     }
                     if (!this._moderator.audio_start_muted && this._moderator.video_start_hidden) {
                         this.userLog('warning', 'مدیر جلسه تصویر شما را غیرفعال کرده است', 'top-end');
+=======
+                    this.userLog('warning', 'The Moderator starts your video in privacy mode', 'top-end');
+                }
+                if (this._moderator.audio_start_muted && this._moderator.video_start_hidden) {
+                    this.userLog('warning', 'The Moderator disabled your audio and video', 'top-end');
+                } else {
+                    if (this._moderator.audio_start_muted && !this._moderator.video_start_hidden) {
+                        this.userLog('warning', 'The Moderator disabled your audio', 'top-end');
+                    }
+                    if (!this._moderator.audio_start_muted && this._moderator.video_start_hidden) {
+                        this.userLog('warning', 'The Moderator disabled your video', 'top-end');
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
                     }
                 }
                 //
@@ -794,7 +855,11 @@ class RoomClient {
                 continue;
             }
 
+<<<<<<< HEAD
             const canSetVideoOff = isPresenter;
+=======
+            const canSetVideoOff = !isBroadcastingEnabled || (isBroadcastingEnabled && peer_presenter);
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
 
             if (!peer_video && canSetVideoOff) {
                 console.log('Detected peer video off ' + peer_name);
@@ -834,10 +899,15 @@ class RoomClient {
 
         let device;
         try {
+<<<<<<< HEAD
             device = this.test.device.enabled
                 ? await this.mediasoupClient.Device.factory({ handlerName: this.test.device.handlerName })
                 : await this.mediasoupClient.Device.factory();
 
+=======
+            device = await this.mediasoupClient.Device.factory();
+            // device = await this.mediasoupClient.Device.factory({ handlerName: 'Safari12' }); // for testing only
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
             console.log('Device created successfully:', device.handlerName);
         } catch (error) {
             if (error.name === 'UnsupportedError') {
@@ -1193,9 +1263,12 @@ class RoomClient {
         this.socket.on('endRTMPfromURL', this.handleEndRTMPfromURL);
         this.socket.on('errorRTMPfromURL', this.handleErrorRTMPfromURL);
         this.socket.on('updatePolls', this.handleUpdatePolls);
+<<<<<<< HEAD
         // ==== QUIZ SOCKET EVENTS ====
         this.socket.on('quizState', this.handleQuizState);
         this.socket.on('quizResults', this.handleQuizResults);
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
         this.socket.on('editorChange', this.handleEditorChange);
         this.socket.on('editorActions', this.handleEditorActions);
         this.socket.on('editorUpdate', this.handleEditorUpdate);
@@ -1248,9 +1321,12 @@ class RoomClient {
         }
     };
 
+<<<<<<< HEAD
 
 
 
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
     handleRemoveMe = (data) => {
         console.log('SocketOn Remove me:', data);
         this.removeVideoOff(data.peer_id);
@@ -1613,8 +1689,11 @@ class RoomClient {
             video: peer_video,
             screen: peer_screen,
             notify: 0,
+<<<<<<< HEAD
             hearts: this.userHearts,
             score: this.userScore,
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
             isPresenter: peer_presenter || isPresenter,
         };
         if (peer_token) queryParams.token = peer_token;
@@ -3216,9 +3295,15 @@ class RoomClient {
                 const buttonGroup = document.createElement('div');
                 buttonGroup.className = 'button-group';
 
+<<<<<<< HEAD
                 //BUTTONS.consumerVideo.sendMessageButton && buttonGroup.appendChild(sm);
                 //BUTTONS.consumerVideo.sendFileButton && buttonGroup.appendChild(sf);
                 //BUTTONS.consumerVideo.sendVideoButton && buttonGroup.appendChild(sv);
+=======
+                BUTTONS.consumerVideo.sendMessageButton && buttonGroup.appendChild(sm);
+                BUTTONS.consumerVideo.sendFileButton && buttonGroup.appendChild(sf);
+                BUTTONS.consumerVideo.sendVideoButton && buttonGroup.appendChild(sv);
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
                 BUTTONS.consumerVideo.geolocationButton && buttonGroup.appendChild(gl);
                 BUTTONS.consumerVideo.banButton && buttonGroup.appendChild(ban);
                 BUTTONS.consumerVideo.ejectButton && buttonGroup.appendChild(ko);
@@ -3453,9 +3538,15 @@ class RoomClient {
         pv.value = 100;
 
         if (remotePeer) {
+<<<<<<< HEAD
             //sf = this.createButton('remotePeer___' + peer_id + '___sendFile', html.sendFile);
             //sm = this.createButton('remotePeer___' + peer_id + '___sendMsg', html.sendMsg);
             //sv = this.createButton('remotePeer___' + peer_id + '___sendVideo', html.sendVideo);
+=======
+            sf = this.createButton('remotePeer___' + peer_id + '___sendFile', html.sendFile);
+            sm = this.createButton('remotePeer___' + peer_id + '___sendMsg', html.sendMsg);
+            sv = this.createButton('remotePeer___' + peer_id + '___sendVideo', html.sendVideo);
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
             gl = this.createButton('remotePeer___' + peer_id + '___geoLocation', html.geolocation);
             ban = this.createButton('remotePeer___' + peer_id + '___ban', html.ban);
             ko = this.createButton('remotePeer___' + peer_id + '___kickOut', html.kickOut);
@@ -3487,9 +3578,15 @@ class RoomClient {
             BUTTONS.videoOff.ejectButton && vb.appendChild(ko);
             BUTTONS.videoOff.banButton && vb.appendChild(ban);
             BUTTONS.videoOff.geolocationButton && vb.appendChild(gl);
+<<<<<<< HEAD
             //BUTTONS.videoOff.sendVideoButton && vb.appendChild(sv);
             //BUTTONS.videoOff.sendFileButton && vb.appendChild(sf);
             //BUTTONS.videoOff.sendMessageButton && vb.appendChild(sm);
+=======
+            BUTTONS.videoOff.sendVideoButton && vb.appendChild(sv);
+            BUTTONS.videoOff.sendFileButton && vb.appendChild(sf);
+            BUTTONS.videoOff.sendMessageButton && vb.appendChild(sm);
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
         }
         BUTTONS.videoOff.audioVolumeInput && vb.appendChild(pv);
 
@@ -6198,6 +6295,7 @@ class RoomClient {
         const roomName = this.room_id.trim();
         return `Poll_${roomName}_${dateTime}.txt`;
     }
+<<<<<<< HEAD
     // ##############################################
     // QUIZ (مسابقه چند گزینه‌ای)
     // ##############################################
@@ -6617,6 +6715,8 @@ class RoomClient {
         // correctIndexEl.value = 1;
     }
 
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
 
     // ####################################################
     // EDITOR
@@ -10105,16 +10205,21 @@ class RoomClient {
         switch (data.type) {
             case 'audio_cant_unmute':
                 this._moderator.audio_cant_unmute = data.status;
+<<<<<<< HEAD
                 if (!isPresenter && this._moderator.audio_cant_unmute) {
                     hide(tabAudioDevicesBtn);
                 }
                 else {
                     show(tabAudioDevicesBtn)
                 }
+=======
+                this._moderator.audio_cant_unmute ? hide(tabAudioDevicesBtn) : show(tabAudioDevicesBtn);
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
                 rc.roomMessage('audio_cant_unmute', data.status);
                 break;
             case 'video_cant_unhide':
                 this._moderator.video_cant_unhide = data.status;
+<<<<<<< HEAD
                 if (!isPresenter && this._moderator.video_cant_unhide) {
                     hide(tabVideoDevicesBtn);
                 } else {
@@ -10122,6 +10227,11 @@ class RoomClient {
                 }
                 rc.roomMessage('video_cant_unhide', data.status);
                 break;;
+=======
+                this._moderator.video_cant_unhide ? hide(tabVideoDevicesBtn) : show(tabVideoDevicesBtn);
+                rc.roomMessage('video_cant_unhide', data.status);
+                break;
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
             case 'screen_cant_share':
                 this._moderator.screen_cant_share = data.status;
                 rc.roomMessage('screen_cant_share', data.status);
@@ -10367,6 +10477,7 @@ class RoomClient {
                         case error.UNKNOWN_ERROR:
                             geoError = 'An unknown error occurred';
                             break;
+<<<<<<< HEAD
                         case 'NOT_SUPPORTED':
                             geoError = 'Geolocation is not supported by this browser';
                             break;
@@ -10384,6 +10495,11 @@ class RoomClient {
                         geoError +=
                             ' If the problem persists, check your device and browser location permissions, and ensure you have a clear view of the sky (for GPS)';
                     }
+=======
+                        default:
+                            break;
+                    }
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
                     rc.sendPeerGeoLocation(peer_id, 'geoLocationKO', `${rc.peer_name}: ${geoError}`);
                     rc.userLog('warning', geoError, 'top-end', 5000);
                 },

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500&display=swap');
+=======
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500&display=swap');
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
 
 /*--------------------------------------------------------------
 # Keyframes
@@ -90,6 +94,7 @@ body {
     font-family: 'Montserrat';
     border-radius: 10px;
 }
+<<<<<<< HEAD
 #quizRoom .quiz-host-scroll {
     max-height: 260px; 
     overflow-y: auto; 
@@ -109,10 +114,13 @@ body {
     padding-left: 1rem;
 }
 
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
 
 /*--------------------------------------------------------------
 # Init User
 --------------------------------------------------------------*/
+<<<<<<< HEAD
 .user-info-box {
     position: fixed;
     top: 10px;
@@ -133,6 +141,9 @@ body {
     .user-info-box span {
         font-weight: bold;
     }
+=======
+
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
 .init-modal-size {
     width: 1024px !important;
     height: auto !important;
@@ -1882,6 +1893,7 @@ progress {
     padding: 0;
 }
 
+<<<<<<< HEAD
 /* Whiteboard Shortcuts Styles */
 #whiteboardShortcutsContent {
     display: none;
@@ -2043,6 +2055,8 @@ progress {
     border-radius: 6px;
 }
 
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
 /*--------------------------------------------------------------
 # Video exit, pin/Unpin btn
 --------------------------------------------------------------*/
@@ -2302,4 +2316,7 @@ z-index:
     - 8 send receive progress
     - 9 room/user emoji
 */
+<<<<<<< HEAD
 
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7

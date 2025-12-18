@@ -2,7 +2,11 @@
 
 /**
  * ==============================================
+<<<<<<< HEAD
  * MiroTalk SFU v2.0.45 - Configuration File
+=======
+ * MiroTalk SFU v2.0.39 - Configuration File
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
  * ==============================================
  *
  * This file contains all configurable settings for the MiroTalk SFU application.

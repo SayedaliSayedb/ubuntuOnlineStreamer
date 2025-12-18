@@ -11,7 +11,11 @@ if (location.href.substr(0, 5) !== 'https') location.href = 'https' + location.h
  * @license For commercial or closed source, contact us at license.mirotalk@gmail.com or purchase directly via CodeCanyon
  * @license CodeCanyon: https://codecanyon.net/item/mirotalk-sfu-webrtc-realtime-video-conferences/40769970
  * @author  Miroslav Pejic - miroslav.pejic.85@gmail.com
+<<<<<<< HEAD
  * @version 2.0.45
+=======
+ * @version 2.0.39
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
  *
  */
 
@@ -211,11 +215,15 @@ const initSpeakerSelect = getId('initSpeakerSelect');
 // VIRTUAL BACKGROUND DEFAULT IMAGES AND INIT CLASS
 // ####################################################
 
+<<<<<<< HEAD
 const virtualBackgrounds =
     window.image && window.image.virtualBackground
         ? Object.values(window.image.virtualBackground)
         : [];
 
+=======
+const virtualBackgrounds = Object.values(image.virtualBackground);
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
 
 const virtualBackground = new VirtualBackground();
 
@@ -296,10 +304,15 @@ let wbIsDrawing = false;
 let wbIsOpen = false;
 let wbIsRedoing = false;
 let wbIsEraser = false;
+<<<<<<< HEAD
 let wbIsVanishing = false;
 let wbIsBgTransparent = false;
 let wbPop = [];
 let wbVanishingObjects = [];
+=======
+let wbIsBgTransparent = false;
+let wbPop = [];
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
 let coords = {};
 
 let isButtonsVisible = false;
@@ -414,8 +427,11 @@ function initClient() {
         setTippy('wbBackgroundColorEl', 'Background color', 'bottom');
         setTippy('wbDrawingColorEl', 'Drawing color', 'bottom');
         setTippy('whiteboardPencilBtn', 'Drawing mode', 'bottom');
+<<<<<<< HEAD
         setTippy('whiteboardVanishingBtn', 'Vanishing pen (disappears in 5s)', 'bottom');
         setTippy('whiteboardEraserBtn', 'Eraser', 'bottom');
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
         setTippy('whiteboardObjectBtn', 'Object mode', 'bottom');
         setTippy('whiteboardUndoBtn', 'Undo', 'bottom');
         setTippy('whiteboardRedoBtn', 'Redo', 'bottom');
@@ -489,7 +505,10 @@ function refreshMainButtonsToolTipPlacement() {
         setTippy('fullScreenButton', 'Toggle full screen', placement);
         setTippy('emojiRoomButton', 'Toggle emoji reaction', placement);
         setTippy('pollButton', 'Toggle the poll', placement);
+<<<<<<< HEAD
         setTippy('quizButton', 'Toggle the quiz', placement);
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
         setTippy('editorButton', 'Toggle the editor', placement);
         setTippy('transcriptionButton', 'Toggle transcription', placement);
         setTippy('whiteboardButton', 'Toggle the whiteboard', placement);
@@ -1467,7 +1486,11 @@ async function shareRoom(useNavigator = false) {
     }
     function share() {
         sound('open');
+<<<<<<< HEAD
         2
+=======
+
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
         Swal.fire({
             background: swalBackground,
             position: 'center',
@@ -1500,8 +1523,12 @@ async function shareRoom(useNavigator = false) {
                 rc.shareScreen();
             }
         });
+<<<<<<< HEAD
         roomIsReady();
        // makeRoomQR();
+=======
+        makeRoomQR();
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
     }
 }
 
@@ -1623,6 +1650,7 @@ function joinRoom(peer_name, room_id) {
 }
 
 function roomIsReady() {
+<<<<<<< HEAD
     console.log('roomIsReady اجرا شد! وضعیت: ', {
         isPresenter: rc.isPresenter,  // rc از RoomClient.js
         isConnected: rc._isConnected,
@@ -1676,17 +1704,53 @@ function roomIsReady() {
         }
     }
 
+=======
+    startRoomSession();
+
+    makeRoomPopupQR();
+
+    if (peer_avatar && isImageURL(peer_avatar)) {
+        myProfileAvatar.setAttribute('src', peer_avatar);
+    } else if (rc.isValidEmail(peer_name)) {
+        myProfileAvatar.style.borderRadius = `50px`;
+        myProfileAvatar.setAttribute('src', rc.genGravatar(peer_name));
+    } else {
+        myProfileAvatar.setAttribute('src', rc.genAvatarSvg(peer_name, 64));
+    }
+
+    const controlDiv = getId('control');
+    if (controlDiv) {
+        const visibleButtons = Array.from(controlDiv.children).filter(
+            (el) => el.offsetParent !== null && !el.classList.contains('hidden')
+        );
+        BUTTONS.main.extraButton || visibleButtons.length > 0 ? show(toggleExtraButton) : hide(toggleExtraButton);
+    } else {
+        show(toggleExtraButton);
+    }
+
+    BUTTONS.main.exitButton && show(exitButton);
+    BUTTONS.main.shareButton && show(shareButton);
+    BUTTONS.main.hideMeButton && show(hideMeButton);
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
     if (BUTTONS.settings.tabRecording) {
         show(startRecButton);
     } else {
         hide(startRecButton);
         hide(tabRecordingBtn);
     }
+<<<<<<< HEAD
     //BUTTONS.main.chatButton && show(chatButton);
     //BUTTONS.main.participantsButton && show(participantsButton);
     BUTTONS.main.pollButton && show(pollButton);
     BUTTONS.main.pollButton && show(quizButton);
     BUTTONS.main.editorButton && show(editorButton);
+=======
+    BUTTONS.main.chatButton && show(chatButton);
+    BUTTONS.main.participantsButton && show(participantsButton);
+    BUTTONS.main.pollButton && show(pollButton);
+    BUTTONS.main.editorButton && show(editorButton);
+    BUTTONS.main.raiseHandButton && show(raiseHandButton);
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
     BUTTONS.main.emojiRoomButton && show(emojiRoomButton);
     !BUTTONS.chat.chatSaveButton && hide(chatSaveButton);
     BUTTONS.chat.chatEmojiButton && show(chatEmojiButton);
@@ -1739,9 +1803,13 @@ function roomIsReady() {
         rc.makeDraggable(transcriptionRoom, transcriptionHeader);
         if (navigator.getDisplayMedia || navigator.mediaDevices.getDisplayMedia) {
             if (BUTTONS.main.startScreenButton) {
+<<<<<<< HEAD
                 if (isPresenter) show(startScreenButton);
                 else hide(startScreenButton);
                     
+=======
+                show(startScreenButton);
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
                 show(ScreenQualityDiv);
                 show(ScreenFpsDiv);
             }
@@ -1769,6 +1837,7 @@ function roomIsReady() {
     }
     BUTTONS.main.whiteboardButton && show(whiteboardButton);
     if (BUTTONS.main.documentPiPButton && showDocumentPipBtn) show(documentPiPButton);
+<<<<<<< HEAD
 
     if (!isPresenter) {
         hide(settingsButton);
@@ -1777,6 +1846,9 @@ function roomIsReady() {
         show(settingsButton);
     }
     handleButtons();
+=======
+    BUTTONS.main.settingsButton && show(settingsButton);
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
     isAudioAllowed ? show(stopAudioButton) : BUTTONS.main.startAudioButton && show(startAudioButton);
     isVideoAllowed ? show(stopVideoButton) : BUTTONS.main.startVideoButton && show(startVideoButton);
     BUTTONS.settings.activeRooms && show(activeRoomsButton);
@@ -1797,7 +1869,11 @@ function roomIsReady() {
     ) {
         rc.showVideoImageSelector();
     }
+<<<<<<< HEAD
 
+=======
+    handleButtons();
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
     handleSelects();
     handleInputs();
     handleChatEmojiPicker();
@@ -2108,6 +2184,7 @@ function handleButtons() {
     pollCloseBtn.onclick = () => {
         rc.togglePoll();
     };
+<<<<<<< HEAD
     // Quiz (مسابقه)
     if (typeof quizButton !== 'undefined') {
         quizButton.onclick = () => {
@@ -2117,6 +2194,8 @@ function handleButtons() {
     quizCloseBtn.onclick = () => {
         rc.toggleQuiz();
     };
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
     pollTogglePin.onclick = () => {
         rc.togglePollPin();
     };
@@ -2300,7 +2379,11 @@ function handleButtons() {
     startAudioButton.onclick = async () => {
         const moderator = rc.getModerator();
         if (moderator.audio_cant_unmute) {
+<<<<<<< HEAD
             return userLog('warning', 'دسترسی به میکروفن فعلا امکانش نیست', 'top-end', 6000);
+=======
+            return userLog('warning', 'The moderator does not allow you to unmute', 'top-end', 6000);
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
         }
         if (isPushToTalkActive) return;
         setAudioButtonsDisabled(true);
@@ -2331,7 +2414,11 @@ function handleButtons() {
     startVideoButton.onclick = async () => {
         const moderator = rc.getModerator();
         if (moderator.video_cant_unhide) {
+<<<<<<< HEAD
             return userLog('warning', 'دسترسی به دوربین فعلا امکانش نیست', 'top-end', 6000);
+=======
+            return userLog('warning', 'The moderator does not allow you to unhide', 'top-end', 6000);
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
         }
         setVideoButtonsDisabled(true);
         if (!isEnumerateVideoDevices) await initEnumerateVideoDevices();
@@ -2411,9 +2498,12 @@ function handleButtons() {
     whiteboardPencilBtn.onclick = () => {
         whiteboardIsDrawingMode(true);
     };
+<<<<<<< HEAD
     whiteboardVanishingBtn.onclick = () => {
         whiteboardIsVanishingMode(true);
     };
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
     whiteboardObjectBtn.onclick = () => {
         whiteboardIsDrawingMode(false);
     };
@@ -2438,9 +2528,12 @@ function handleButtons() {
     whiteboardTextBtn.onclick = () => {
         whiteboardAddObj('text');
     };
+<<<<<<< HEAD
     whiteboardStickyNoteBtn.onclick = () => {
         whiteboardAddObj('stickyNote');
     };
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
     whiteboardLineBtn.onclick = () => {
         whiteboardAddObj('line');
     };
@@ -2459,9 +2552,12 @@ function handleButtons() {
     whiteboardCleanBtn.onclick = () => {
         confirmClearBoard();
     };
+<<<<<<< HEAD
     whiteboardShortcutsBtn.onclick = () => {
         showWhiteboardShortcuts();
     };
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
     whiteboardCloseBtn.onclick = () => {
         whiteboardAction(getWhiteboardAction('close'));
     };
@@ -3021,6 +3117,7 @@ function handleSelects() {
     whiteboardGhostButton.onclick = (e) => {
         wbIsBgTransparent = !wbIsBgTransparent;
         wbIsBgTransparent ? wbCanvasBackgroundColor('rgba(0, 0, 0, 0.100)') : setTheme();
+<<<<<<< HEAD
         if (BUTTONS.main.extraButton) {
             if (isPresenter) {
                 wbIsBgTransparent ? hide(toggleExtraButton) : show(toggleExtraButton);
@@ -3029,6 +3126,8 @@ function handleSelects() {
                 hide(toggleExtraButton);
             }
         }
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
     };
     whiteboardGridBtn.onclick = (e) => {
         toggleCanvasGrid();
@@ -4278,9 +4377,13 @@ function whiteboardCenter() {
 function setupWhiteboard() {
     setupWhiteboardCanvas();
     setupWhiteboardCanvasSize();
+<<<<<<< HEAD
     setupWhiteboardLocalListeners();
     setupWhiteboardShortcuts();
     setupWhiteboardDragAndDrop();
+=======
+    setupWhiteboardLocalListners();
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
 }
 
 function setupWhiteboardCanvas() {
@@ -4371,6 +4474,7 @@ function whiteboardIsDrawingMode(status) {
     wbCanvas.isDrawingMode = status;
     if (status) {
         setColor(whiteboardPencilBtn, 'green');
+<<<<<<< HEAD
         setColor(whiteboardVanishingBtn, 'white');
         setColor(whiteboardObjectBtn, 'white');
         setColor(whiteboardEraserBtn, 'white');
@@ -4379,10 +4483,18 @@ function whiteboardIsDrawingMode(status) {
     } else {
         setColor(whiteboardPencilBtn, 'white');
         setColor(whiteboardVanishingBtn, 'white');
+=======
+        setColor(whiteboardObjectBtn, 'white');
+        setColor(whiteboardEraserBtn, 'white');
+        wbIsEraser = false;
+    } else {
+        setColor(whiteboardPencilBtn, 'white');
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
         setColor(whiteboardObjectBtn, 'green');
     }
 }
 
+<<<<<<< HEAD
 function whiteboardIsVanishingMode(status) {
     wbCanvas.isDrawingMode = status;
     wbIsVanishing = status;
@@ -4397,6 +4509,8 @@ function whiteboardIsVanishingMode(status) {
     }
 }
 
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
 function whiteboardIsEraser(status) {
     whiteboardIsDrawingMode(false);
     wbIsEraser = status;
@@ -4444,9 +4558,12 @@ function whiteboardAddObj(type) {
             });
             addWbCanvasObj(text);
             break;
+<<<<<<< HEAD
         case 'stickyNote':
             createStickyNote();
             break;
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
         case 'line':
             const line = new fabric.Line([50, 100, 200, 200], {
                 top: 0,
@@ -4495,6 +4612,7 @@ function whiteboardAddObj(type) {
     }
 }
 
+<<<<<<< HEAD
 function whiteboardEraseObject() {
     if (wbCanvas && typeof wbCanvas.getActiveObjects === 'function') {
         const activeObjects = wbCanvas.getActiveObjects();
@@ -4664,6 +4782,8 @@ function createStickyNote() {
     });
 }
 
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
 function setupFileSelection(title, accept, renderToCanvas) {
     Swal.fire({
         allowOutsideClick: false,
@@ -4834,7 +4954,11 @@ function addWbCanvasObj(obj) {
     }
 }
 
+<<<<<<< HEAD
 function setupWhiteboardLocalListeners() {
+=======
+function setupWhiteboardLocalListners() {
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
     wbCanvas.on('mouse:down', function (e) {
         mouseDown(e);
     });
@@ -4852,9 +4976,12 @@ function setupWhiteboardLocalListeners() {
 function mouseDown(e) {
     wbIsDrawing = true;
     if (wbIsEraser && e.target) {
+<<<<<<< HEAD
         if (!wbVanishingObjects.includes(e.target)) {
             wbPop.push(e.target); // To allow redo
         }
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
         wbCanvas.remove(e.target);
         return;
     }
@@ -4878,7 +5005,10 @@ function mouseMove() {
 function objectAdded() {
     if (!wbIsRedoing) wbPop = [];
     wbIsRedoing = false;
+<<<<<<< HEAD
     wbHandleVanishingObjects();
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
 }
 
 function wbCanvasBackgroundColor(color) {
@@ -4890,10 +5020,14 @@ function wbCanvasBackgroundColor(color) {
 
 function wbCanvasUndo() {
     if (wbCanvas._objects.length > 0) {
+<<<<<<< HEAD
         const obj = wbCanvas._objects.pop();
         if (!wbVanishingObjects.includes(obj)) {
             wbPop.push(obj);
         }
+=======
+        wbPop.push(wbCanvas._objects.pop());
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
         wbCanvas.renderAll();
     }
 }
@@ -4927,6 +5061,7 @@ function wbUpdate() {
 }
 
 function wbCanvasToJson() {
+<<<<<<< HEAD
     console.log('wbCanvasToJson called');
     if (!isPresenter && wbIsLock) {
         console.log('Not presenter and whiteboard is locked. Exiting');
@@ -4939,15 +5074,27 @@ function wbCanvasToJson() {
     let wbCanvasJson = JSON.stringify(wbCanvas.toJSON());
     console.log('Emitting wbCanvasToJson');
     rc.socket.emit('wbCanvasToJson', wbCanvasJson);
+=======
+    if (!isPresenter && wbIsLock) return;
+    if (rc.thereAreParticipants()) {
+        let wbCanvasJson = JSON.stringify(wbCanvas.toJSON());
+        rc.socket.emit('wbCanvasToJson', wbCanvasJson);
+    }
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
 }
 
 function JsonToWbCanvas(json) {
     if (!wbIsOpen) toggleWhiteboard();
+<<<<<<< HEAD
     wbIsRedoing = true;
     wbCanvas.loadFromJSON(json, function () {
         wbCanvas.renderAll();
         wbIsRedoing = false;
     });
+=======
+    wbCanvas.loadFromJSON(json);
+    wbCanvas.renderAll();
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
     if (!isPresenter && !wbCanvas.isDrawingMode && wbIsLock) {
         wbDrawing(false);
     }
@@ -4964,7 +5111,11 @@ function confirmClearBoard() {
     Swal.fire({
         background: swalBackground,
         imageUrl: image.delete,
+<<<<<<< HEAD
         position: 'top',
+=======
+        position: 'center',
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
         title: 'Clean the board',
         text: 'Are you sure you want to clean the board?',
         showDenyButton: true,
@@ -4980,6 +5131,7 @@ function confirmClearBoard() {
     });
 }
 
+<<<<<<< HEAD
 function showWhiteboardShortcuts() {
     const whiteboardShortcutsContent = getId('whiteboardShortcutsContent');
     if (!whiteboardShortcutsContent) {
@@ -4997,6 +5149,8 @@ function showWhiteboardShortcuts() {
     });
 }
 
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
 function toggleLockUnlockWhiteboard() {
     wbIsLock = !wbIsLock;
 
@@ -5042,7 +5196,10 @@ function whiteboardAction(data, emit = true) {
             break;
         case 'clear':
             wbCanvas.clear();
+<<<<<<< HEAD
             wbCanvas.renderAll();
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
             break;
         case 'lock':
             if (!isPresenter) {
@@ -5063,6 +5220,7 @@ function whiteboardAction(data, emit = true) {
             }
             break;
         case 'close':
+<<<<<<< HEAD
             if (wbIsOpen) {
                 toggleWhiteboard();
                 if (BUTTONS.main.extraButton) {
@@ -5074,6 +5232,9 @@ function whiteboardAction(data, emit = true) {
                     }
                 }
             }
+=======
+            if (wbIsOpen) toggleWhiteboard();
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
             break;
         default:
             break;
@@ -5090,6 +5251,7 @@ function wbDrawing(status) {
 }
 
 // ####################################################
+<<<<<<< HEAD
 // HANDLE WHITEBOARD DRAG AND DROP
 // ####################################################
 
@@ -5245,6 +5407,8 @@ function setupWhiteboardShortcuts() {
 }
 
 // ####################################################
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
 // HANDLE PARTICIPANTS
 // ####################################################
 
@@ -6298,7 +6462,11 @@ function showAbout() {
         position: 'center',
         imageUrl: BRAND.about?.imageUrl && BRAND.about.imageUrl.trim() !== '' ? BRAND.about.imageUrl : image.about,
         customClass: { image: 'img-about' },
+<<<<<<< HEAD
         title: BRAND.about?.title && BRAND.about.title.trim() !== '' ? BRAND.about.title : 'WebRTC SFU v2.0.45',
+=======
+        title: BRAND.about?.title && BRAND.about.title.trim() !== '' ? BRAND.about.title : 'WebRTC SFU v2.0.39',
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
         html: `
             <br />
             <div id="about">

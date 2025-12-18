@@ -64,7 +64,11 @@ dev dependencies: {
  * @license For commercial or closed source, contact us at license.mirotalk@gmail.com or purchase directly via CodeCanyon
  * @license CodeCanyon: https://codecanyon.net/item/mirotalk-sfu-webrtc-realtime-video-conferences/40769970
  * @author  Miroslav Pejic - miroslav.pejic.85@gmail.com
+<<<<<<< HEAD
  * @version 2.0.45
+=======
+ * @version 2.0.39
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
  *
  */
 
@@ -72,7 +76,11 @@ const express = require('express');
 const { auth, requiresAuth } = require('express-openid-connect');
 const { withFileLock } = require('./MutexManager');
 const { PassThrough } = require('stream');
+<<<<<<< HEAD
 const { S3Client, GetObjectCommand, DeleteObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
+=======
+const { S3Client } = require('@aws-sdk/client-s3');
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
 const { Upload } = require('@aws-sdk/lib-storage');
 const { fixDurationOrRemux } = require('./FixDurationOrRemux');
 const cors = require('cors');
@@ -307,6 +315,24 @@ if (rtmpEnabled) {
         fs.mkdirSync(dir.rtmp, { recursive: true });
     }
 }
+<<<<<<< HEAD
+=======
+
+// ####################################################
+// AWS S3 SETUP
+// ####################################################
+
+const s3Client = new S3Client({
+    region: config?.integrations?.s3?.region, // Set your AWS region
+    credentials: {
+        accessKeyId: config?.integrations?.s3?.accessKeyId,
+        secretAccessKey: config?.integrations?.s3?.secretAccessKey,
+    },
+    endpoint: config?.integrations?.s3?.endpoint || undefined,
+    forcePathStyle: config?.integrations?.s3?.forcePathStyle === true,
+});
+
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
 // html views
 const views = {
     html: path.join(__dirname, '../../public/views'),
@@ -447,6 +473,7 @@ function OIDCAuth(req, res, next) {
     }
 }
 
+<<<<<<< HEAD
 const s3 = new S3Client({
     region: 'default',
     endpoint: 'https://storage.c2.liara.space',
@@ -465,6 +492,8 @@ async function streamToString(stream) {
     });
 }
 
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
 function startServer() {
     // Start the app
     app.set('trust proxy', trustProxy); // Enables trust for proxy headers (e.g., X-Forwarded-For) based on the trustProxy setting
@@ -686,6 +715,7 @@ function startServer() {
             // http://localhost:3010/join?room=test&roomPassword=0&name=mirotalksfu&audio=1&video=1&screen=0&hide=0&notify=1&duration=00:00:30
             // http://localhost:3010/join?room=test&roomPassword=0&name=mirotalksfu&audio=1&video=1&screen=0&hide=0&notify=0&token=token
 
+<<<<<<< HEAD
             const {
                 room,
                 roomPassword,
@@ -706,6 +736,10 @@ function startServer() {
             } = checkXSS(req.query);
 
 
+=======
+            const { room, roomPassword, name, audio, video, screen, hide, notify, chat, duration, token, isPresenter } =
+                checkXSS(req.query);
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
 
             if (!room) {
                 log.warn('/join/params room empty', room);
@@ -715,6 +749,7 @@ function startServer() {
             if (!Validator.isValidRoomName(room)) {
                 return res.redirect('/');
             }
+<<<<<<< HEAD
             let userState = null;
             if (usid) {
                 const safeUid = String(usid).trim();
@@ -794,6 +829,9 @@ function startServer() {
             else {
                 return res.redirect('https://karbalayebaran.ir');
             }
+=======
+
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
             let peerUsername = '';
             let peerPassword = '';
             let isPeerValid = false;
@@ -860,6 +898,10 @@ function startServer() {
                     password: peerPassword,
                 });
             }
+<<<<<<< HEAD
+=======
+
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
             if (room && (hostCfg.authenticated || isPeerValid)) {
                 return htmlInjector.injectHtml(views.room, res);
             } else {
@@ -1901,6 +1943,7 @@ function startServer() {
                 callback({ room_id: socket.room_id });
             }
         });
+<<<<<<< HEAD
         socket.on('saveUserState', async (data) => {
             const { name, hearts, score, usid } = data;  // داده‌های دریافتی از کلاینت
 
@@ -1937,6 +1980,9 @@ function startServer() {
                 socket.emit('saveUserStateResponse', { success: false, error: error.message });
             }
         });
+=======
+
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
         socket.on('join', async (dataObject, cb) => {
             if (!roomExists(socket)) {
                 return cb({
@@ -2322,6 +2368,7 @@ function startServer() {
                 callback({ error: err.message });
             }
         });
+<<<<<<< HEAD
         // =====================
         // QUIZ HANDLERS
         // =====================
@@ -2411,6 +2458,8 @@ function startServer() {
         // اگر خواستی می‌توانی به صورت Optional بگویی هنگام join، اگر کوییزی فعال است برای کلاینت جدید هم ارسال شود.
         // مثلا:
         // socket.emit('quizState', {...room.activeQuiz}) بعد از join موفق
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
 
         socket.on('consume', async ({ consumerTransportId, producerId, rtpCapabilities, type }, callback) => {
             if (!roomExists(socket)) {
@@ -3815,6 +3864,7 @@ function startServer() {
         });
 
         // Helpers
+<<<<<<< HEAD
         function finishQuiz(room) {
             const quiz = room.activeQuiz;
             if (!quiz || quiz.closed) return;
@@ -3858,6 +3908,8 @@ function startServer() {
 
 
 
+=======
+>>>>>>> ae62d5da6a0f14cee4b04e288c227a3814cc5ed7
 
         async function handleJoinWebHook(room_id, peer_info) {
             // handle WebHook
